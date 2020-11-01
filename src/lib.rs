@@ -1,7 +1,4 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub mod lowtexpal;
+
+
+pub use lowtexpal::LowTexPal as LowTexPal;

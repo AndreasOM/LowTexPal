@@ -1,9 +1,18 @@
 [package]
-name = "LowTexPal"
+name = "lowtexpal"
 version = "0.1.0"
 authors = ["Andreas Neukoetter <andreas@omni-mad.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "lowtexpal"
+path = "src/lowtexpal_main.rs"
+
 [dependencies]
+
+clap = "2.33.3"
+hex = "0.4.2"
+image = "0.23.11"
+regex = "1.4.2"
