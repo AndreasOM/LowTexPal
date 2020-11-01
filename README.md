@@ -16,8 +16,8 @@ lowtexpal -f example_01.png add-color --color "#ff00ff"
 lowtexpal -f example_01.png add-color --color "#00ffff"
 ```
 
-![Example Image 01][example_01.png]
+![Example Image 01](example_01.png)
 
 Scaled up:
 
-![Example Image 01 - Big ][big_example_01.png]
+![Example Image 01 - Big ](big_example_01.png)
