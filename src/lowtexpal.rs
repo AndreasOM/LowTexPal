@@ -21,6 +21,49 @@ impl From<&image::Rgba<u8>> for Color {
 	}
 }
 
+impl std::ops::Sub for Color {
+	type Output = Color;
+	fn sub(self, other: Color) -> <Self as std::ops::Sub<Color>>::Output {
+		Color{
+			rgba: [
+				self.rgba[ 0 ] - other.rgba[ 0 ],
+				self.rgba[ 1 ] - other.rgba[ 1 ],
+				self.rgba[ 2 ] - other.rgba[ 2 ],
+				self.rgba[ 3 ] - other.rgba[ 3 ],
+			],
+		}
+	}
+}
+
+impl std::ops::Div<u32> for Color {
+	type Output = Color;
+	fn div(self, other: u32) -> <Self as std::ops::Div<u32>>::Output {
+		Color{
+			rgba: [
+				( ( self.rgba[ 0 ] as u32 )/ other ) as u8,
+				( ( self.rgba[ 1 ] as u32 )/ other ) as u8,
+				( ( self.rgba[ 2 ] as u32 )/ other ) as u8,
+				( ( self.rgba[ 3 ] as u32 )/ other ) as u8,
+			],
+		}
+	}
+}
+
+impl std::ops::AddAssign for Color {
+	fn add_assign(&mut self, other: Color) {
+		self.rgba[ 0 ] = self.rgba[ 0 ].saturating_add(other.rgba[ 0 ] );
+		self.rgba[ 1 ] = self.rgba[ 1 ].saturating_add(other.rgba[ 1 ] );
+		self.rgba[ 2 ] = self.rgba[ 2 ].saturating_add(other.rgba[ 2 ] );
+		self.rgba[ 3 ] = self.rgba[ 3 ].saturating_add(other.rgba[ 3 ] );
+		/*
+		self.rgba[ 0 ] += other.rgba[ 0 ];
+		self.rgba[ 1 ] += other.rgba[ 1 ];
+		self.rgba[ 2 ] += other.rgba[ 2 ];
+		self.rgba[ 3 ] += other.rgba[ 3 ];
+		*/
+	}
+}
+
 impl Color {
 	pub fn rgba(&self) -> [u8;4] {
 		self.rgba
@@ -167,6 +210,25 @@ impl LowTexPal {
 			Some( color ) => {
 				return Some( self.add_color( &color ) )				
 			}
+		}
+	}
+
+	pub fn add_gradient_strings( &mut self, start_color_string: &str, end_color_string: &str, steps: u32 ) -> Option< Vec< usize > > {
+		match ( Color::from_string( &start_color_string ), Color::from_string( &end_color_string ) ) {
+			( Some( start_color) , Some( end_color ) ) => {
+				let delta = ( end_color - start_color ) / ( steps - 1 );
+
+				let mut color = start_color;
+				let mut indices = Vec::new();
+				for s in 0..steps {
+					dbg!(color);
+					indices.push( self.add_color( &color ) );
+					color += delta;
+				}
+//				dbg!(color);
+				Some( indices )
+			},
+			_ => None,
 		}
 	}
 

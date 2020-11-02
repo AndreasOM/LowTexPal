@@ -32,6 +32,35 @@ fn main() {
 								.help("Force the color to be added even if it already exists.")
 						)
 					)
+					.subcommand(
+						SubCommand::with_name("add-gradient")
+						.arg(
+							Arg::with_name("start-color")
+								.long("start-color")
+								.value_name("START COLOR")
+								.help("Set the start color of the gradient to be added.")
+								.takes_value(true)
+						)
+						.arg(
+							Arg::with_name("end-color")
+								.long("end-color")
+								.value_name("END COLOR")
+								.help("Set the end color of the gradient to be added.")
+								.takes_value(true)
+						)
+						.arg(
+							Arg::with_name("steps")
+								.long("steps")
+								.value_name("STEPS")
+								.help("Set the number of steps.")
+								.takes_value(true)
+						)
+						.arg(
+							Arg::with_name("force")
+								.long("force")
+								.help("Force the colors to be added even if they already exist.")
+						)
+					)
 					.get_matches();
 
 //	dbg!(&matches);
@@ -57,6 +86,17 @@ fn main() {
 			match lowtexpal.add_color_string( &color ) {
 				Some( i ) => println!("Added {} at {}", &color, i ),
 				None => println!("Couldn't add {}", &color ),
+			}
+		}
+	} else if let( "add-gradient" , Some( sub_matches ) ) = matches.subcommand() {
+		let start_color = sub_matches.value_of("start-color").unwrap_or("").to_string();
+		let end_color = sub_matches.value_of("end-color").unwrap_or("").to_string();
+		let steps = sub_matches.value_of("steps").unwrap_or("").parse::<u32>().unwrap_or( 0 );
+		dbg!(&start_color, &end_color, &steps);
+		if start_color != "" && end_color != "" && steps != 0 {
+			match lowtexpal.add_gradient_strings( &start_color, &end_color, steps ) {
+				Some( _i ) => {},//println!("Added {} at {}", &color, i ),
+				None => println!("Couldn't add {} - {} with {} steps", &start_color, &end_color, steps ),
 			}
 		}
 	} else {
