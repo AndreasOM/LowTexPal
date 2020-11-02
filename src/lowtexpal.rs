@@ -32,6 +32,32 @@ impl Color {
 	pub fn is_empty( &self ) -> bool {
 		self.rgba == [0u8;4]
 	}
+
+	pub fn from_string( color_string: &str ) -> Option< Color > {
+		//css_color::Rgba
+		// :TODO: add error handling
+		let hashcolor_re = Regex::new( r"^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$" ).expect("");
+		let hashcolor_caps = hashcolor_re.captures( color_string );
+//		dbg!( &hashcolor_caps );
+
+		match hashcolor_caps {
+			Some( hashcolor_caps ) => {
+				let r = hex::decode( &hashcolor_caps[ 1 ] ).unwrap_or([0u8;1].to_vec())[0];	// we know if is 00-ff, so the _or( ... ) should never trigger
+				let g = hex::decode( &hashcolor_caps[ 2 ] ).unwrap_or([0u8;1].to_vec())[0];
+				let b = hex::decode( &hashcolor_caps[ 3 ] ).unwrap_or([0u8;1].to_vec())[0];
+//				dbg!("Match", &r, &g, &b);
+
+				let a = 0xff;
+
+				let color = [ r, g, b, a ].into();
+				return Some( color )
+			},
+			None => {},
+		}
+		// :TODO: add parsers for other formats
+
+		None		
+	}
 }
 
 #[derive(Debug)]
@@ -144,31 +170,16 @@ impl LowTexPal {
 		self.add_color( &color )
 	}
 
-	pub fn add_color_string( &mut self, color: &str ) -> Option< usize > {
-		// :TODO: add error handling
-		let hashcolor_re = Regex::new( r"^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$" ).expect("");
-		let hashcolor_caps = hashcolor_re.captures( color );
-//		dbg!( &hashcolor_caps );
-
-		match hashcolor_caps {
-			Some( hashcolor_caps ) => {
-				let r = hex::decode( &hashcolor_caps[ 1 ] ).unwrap_or([0u8;1].to_vec())[0];	// we know if is 00-ff, so the _or( ... ) should never trigger
-				let g = hex::decode( &hashcolor_caps[ 2 ] ).unwrap_or([0u8;1].to_vec())[0];
-				let b = hex::decode( &hashcolor_caps[ 3 ] ).unwrap_or([0u8;1].to_vec())[0];
-//				dbg!("Match", &r, &g, &b);
-
-				let a = 0xff;
-
-				let color = [ r, g, b, a ].into();
-				return Some( self.add_color( &color ) )
+	pub fn add_color_string( &mut self, color_string: &str ) -> Option< usize > {
+		match Color::from_string( &color_string ) {
+			None => {
+						dbg!("No Match");
+						None
 			},
-			None => {},
+			Some( color ) => {
+				return Some( self.add_color( &color ) )				
+			}
 		}
-		// :TODO: add parsers for other formats
-
-		// :TODO: add error handling
-		dbg!("No Match");
-		None
 	}
 
 }
