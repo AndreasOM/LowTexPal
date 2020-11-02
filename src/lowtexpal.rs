@@ -1,7 +1,4 @@
 
-// use image::DynamicImage;
-use regex::Regex;
-
 #[derive(Debug,Copy,Clone)]
 struct Color {
 	rgba: [u8;4],
@@ -37,7 +34,7 @@ impl Color {
 		match color_string.parse() as Result<css_color::Rgba, css_color::ParseColorError> {
 			Err( _e ) => None,
 			Ok( css_color ) => {
-				dbg!(&css_color);
+//				dbg!(&css_color);
 
 				let r = ( 255.0 * css_color.red as f32 ) as u8;
 				let g = ( 255.0 * css_color.green as f32 ) as u8;
