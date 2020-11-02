@@ -95,7 +95,7 @@ fn main() {
 		dbg!(&start_color, &end_color, &steps);
 		if start_color != "" && end_color != "" && steps != 0 {
 			match lowtexpal.add_gradient_strings( &start_color, &end_color, steps ) {
-				Some( _i ) => {},//println!("Added {} at {}", &color, i ),
+				Some( i ) => println!("Added {} - {} at {:#?}", &start_color, &end_color, &i ),
 				None => println!("Couldn't add {} - {} with {} steps", &start_color, &end_color, steps ),
 			}
 		}

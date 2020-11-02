@@ -242,7 +242,7 @@ impl LowTexPal {
 				let mut color = start_color;
 				let mut indices = Vec::new();
 				for _s in 0..steps {
-					dbg!(color);
+//					dbg!(color);
 					indices.push( self.add_color( &color ) );
 					color += delta;
 				}
