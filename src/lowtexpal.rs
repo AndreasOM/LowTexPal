@@ -1,14 +1,19 @@
 
 #[derive(Debug,Copy,Clone)]
 struct Color {
-	rgba: [u8;4],
+	rgba: [f32;4],
 }
 
 impl From<[u8;4]> for Color {
 
 	fn from(src: [u8;4]) -> Self {
 		Color {
-			rgba: src,
+			rgba: [
+				( src[ 0 ] as f32 ) / 255.0,
+				( src[ 1 ] as f32 ) / 255.0,
+				( src[ 2 ] as f32 ) / 255.0,
+				( src[ 3 ] as f32 ) / 255.0,
+			],
 		}
 	}
 }
@@ -16,7 +21,12 @@ impl From<[u8;4]> for Color {
 impl From<&image::Rgba<u8>> for Color {
 	fn from(src: &image::Rgba<u8> ) -> Self {
 		Color {
-			rgba: [src[0],src[1],src[2],src[3]],
+			rgba: [
+				( src[ 0 ] as f32 ) / 255.0,
+				( src[ 1 ] as f32 ) / 255.0,
+				( src[ 2 ] as f32 ) / 255.0,
+				( src[ 3 ] as f32 ) / 255.0,
+			],
 		}
 	}
 }
@@ -40,10 +50,10 @@ impl std::ops::Div<u32> for Color {
 	fn div(self, other: u32) -> <Self as std::ops::Div<u32>>::Output {
 		Color{
 			rgba: [
-				( ( self.rgba[ 0 ] as u32 )/ other ) as u8,
-				( ( self.rgba[ 1 ] as u32 )/ other ) as u8,
-				( ( self.rgba[ 2 ] as u32 )/ other ) as u8,
-				( ( self.rgba[ 3 ] as u32 )/ other ) as u8,
+				self.rgba[ 0 ] / ( other as f32 ),
+				self.rgba[ 1 ] / ( other as f32 ),
+				self.rgba[ 2 ] / ( other as f32 ),
+				self.rgba[ 3 ] / ( other as f32 ),
 			],
 		}
 	}
@@ -51,26 +61,35 @@ impl std::ops::Div<u32> for Color {
 
 impl std::ops::AddAssign for Color {
 	fn add_assign(&mut self, other: Color) {
+		/*
 		self.rgba[ 0 ] = self.rgba[ 0 ].saturating_add(other.rgba[ 0 ] );
 		self.rgba[ 1 ] = self.rgba[ 1 ].saturating_add(other.rgba[ 1 ] );
 		self.rgba[ 2 ] = self.rgba[ 2 ].saturating_add(other.rgba[ 2 ] );
 		self.rgba[ 3 ] = self.rgba[ 3 ].saturating_add(other.rgba[ 3 ] );
-		/*
+		*/
 		self.rgba[ 0 ] += other.rgba[ 0 ];
 		self.rgba[ 1 ] += other.rgba[ 1 ];
 		self.rgba[ 2 ] += other.rgba[ 2 ];
 		self.rgba[ 3 ] += other.rgba[ 3 ];
-		*/
 	}
 }
 
 impl Color {
-	pub fn rgba(&self) -> [u8;4] {
+	pub fn rgba_u8(&self) -> [u8;4] {
+		[
+			( self.rgba[ 0 ] * 255.0 ) as u8,
+			( self.rgba[ 1 ] * 255.0 ) as u8,
+			( self.rgba[ 2 ] * 255.0 ) as u8,
+			( self.rgba[ 3 ] * 255.0 ) as u8,
+		]
+	}
+
+	pub fn rgba(&self) -> [f32;4] {
 		self.rgba
 	}
 
 	pub fn is_empty( &self ) -> bool {
-		self.rgba == [0u8;4]
+		self.rgba == [0f32;4]
 	}
 
 	pub fn from_string( color_string: &str ) -> Option< Color > {
@@ -79,6 +98,7 @@ impl Color {
 			Ok( css_color ) => {
 //				dbg!(&css_color);
 
+				// :TODO: improve
 				let r = ( 255.0 * css_color.red as f32 ) as u8;
 				let g = ( 255.0 * css_color.green as f32 ) as u8;
 				let b = ( 255.0 * css_color.blue as f32 ) as u8;
@@ -146,6 +166,7 @@ impl LowTexPal {
 			4 => 2, //  <= 4 -> 2x2
 			n if n <= 16 => 4,
 			n if n <= 64 => 8,
+			n if n <= 256 => 16,
 			// :TODO: could use round_up_to_power_of_2(sqrt(n))
 			n => panic!("Not handling size for {} entries", n ),
 		};
@@ -162,7 +183,7 @@ impl LowTexPal {
 			if x >= size && y >= size {
 				panic!("Tried to write to many pixels to image");	// should never trigger				
 			}
-			let rgba = color.rgba();
+			let rgba = color.rgba_u8();
 
 			let p = imgbuf.get_pixel_mut( x, y );
 
@@ -220,7 +241,7 @@ impl LowTexPal {
 
 				let mut color = start_color;
 				let mut indices = Vec::new();
-				for s in 0..steps {
+				for _s in 0..steps {
 					dbg!(color);
 					indices.push( self.add_color( &color ) );
 					color += delta;
