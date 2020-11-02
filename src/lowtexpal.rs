@@ -34,29 +34,20 @@ impl Color {
 	}
 
 	pub fn from_string( color_string: &str ) -> Option< Color > {
-		//css_color::Rgba
-		// :TODO: add error handling
-		let hashcolor_re = Regex::new( r"^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$" ).expect("");
-		let hashcolor_caps = hashcolor_re.captures( color_string );
-//		dbg!( &hashcolor_caps );
+		match color_string.parse() as Result<css_color::Rgba, css_color::ParseColorError> {
+			Err( _e ) => None,
+			Ok( css_color ) => {
+				dbg!(&css_color);
 
-		match hashcolor_caps {
-			Some( hashcolor_caps ) => {
-				let r = hex::decode( &hashcolor_caps[ 1 ] ).unwrap_or([0u8;1].to_vec())[0];	// we know if is 00-ff, so the _or( ... ) should never trigger
-				let g = hex::decode( &hashcolor_caps[ 2 ] ).unwrap_or([0u8;1].to_vec())[0];
-				let b = hex::decode( &hashcolor_caps[ 3 ] ).unwrap_or([0u8;1].to_vec())[0];
-//				dbg!("Match", &r, &g, &b);
-
-				let a = 0xff;
+				let r = ( 255.0 * css_color.red as f32 ) as u8;
+				let g = ( 255.0 * css_color.green as f32 ) as u8;
+				let b = ( 255.0 * css_color.blue as f32 ) as u8;
+				let a = ( 255.0 * css_color.alpha as f32 ) as u8;
 
 				let color = [ r, g, b, a ].into();
-				return Some( color )
+				Some( color )
 			},
-			None => {},
 		}
-		// :TODO: add parsers for other formats
-
-		None		
 	}
 }
 

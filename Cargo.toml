@@ -13,6 +13,7 @@ path = "src/lowtexpal_main.rs"
 [dependencies]
 
 clap = "2.33.3"
+css-color = "0.1.1"
 hex = "0.4.2"
 image = "0.23.11"
 regex = "1.4.2"
