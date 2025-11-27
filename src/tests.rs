@@ -200,3 +200,88 @@ fn test_modification_tracking() {
 	ltp.add_color_rgb(255, 0, 0);
 	assert!(ltp.was_modified());
 }
+
+// ===== OKLab Color Space Tests =====
+
+#[test]
+fn test_oklab_round_trip_black() {
+	let black = Color::from([0u8, 0, 0, 255]);
+	let lab = black.to_oklab();
+	let back = Color::from_oklab(lab);
+
+	// Black should convert to/from OKLab cleanly
+	let rgb = back.rgba_u8();
+	assert!(rgb[0] <= 1); // Allow tiny rounding error
+	assert!(rgb[1] <= 1);
+	assert!(rgb[2] <= 1);
+}
+
+#[test]
+fn test_oklab_round_trip_white() {
+	let white = Color::from([255u8, 255, 255, 255]);
+	let lab = white.to_oklab();
+	let back = Color::from_oklab(lab);
+
+	// White should convert to/from OKLab cleanly
+	let rgb = back.rgba_u8();
+	assert!(rgb[0] >= 254); // Allow tiny rounding error
+	assert!(rgb[1] >= 254);
+	assert!(rgb[2] >= 254);
+}
+
+#[test]
+fn test_oklab_round_trip_red() {
+	let red = Color::from([255u8, 0, 0, 255]);
+	let lab = red.to_oklab();
+	let back = Color::from_oklab(lab);
+
+	let rgb = back.rgba_u8();
+	assert!(rgb[0] >= 254);
+	assert!(rgb[1] <= 1);
+	assert!(rgb[2] <= 1);
+}
+
+#[test]
+fn test_oklch_round_trip() {
+	let red = Color::from([255u8, 0, 0, 255]);
+	let lch = red.to_oklch();
+	let back = Color::from_oklch(lch);
+
+	let rgb = back.rgba_u8();
+	assert!(rgb[0] >= 254);
+	assert!(rgb[1] <= 1);
+	assert!(rgb[2] <= 1);
+}
+
+#[test]
+fn test_oklab_gradient() {
+	let mut ltp = LowTexPal::new("test.png");
+	let result = ltp.add_gradient_colorspace("red", "lime", 8, "oklab");
+	assert!(result.is_some());
+
+	let indices = result.unwrap();
+	assert_eq!(indices.len(), 8);
+}
+
+#[test]
+fn test_oklch_gradient() {
+	let mut ltp = LowTexPal::new("test.png");
+	let result = ltp.add_gradient_colorspace("red", "blue", 8, "oklch");
+	assert!(result.is_some());
+
+	let indices = result.unwrap();
+	assert_eq!(indices.len(), 8);
+}
+
+#[test]
+fn test_rgb_gradient_backward_compat() {
+	let mut ltp = LowTexPal::new("test.png");
+	// Old method should still work
+	let result1 = ltp.add_gradient_strings("black", "white", 4);
+	assert!(result1.is_some());
+
+	// New method with RGB should give same result
+	let mut ltp2 = LowTexPal::new("test2.png");
+	let result2 = ltp2.add_gradient_colorspace("black", "white", 4, "rgb");
+	assert!(result2.is_some());
+}

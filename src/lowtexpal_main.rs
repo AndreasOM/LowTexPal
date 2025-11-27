@@ -43,6 +43,10 @@ enum Commands {
 		#[arg(long, value_name = "STEPS")]
 		steps: Option<u32>,
 
+		/// Colorspace for gradient interpolation (rgb, oklab, oklch)
+		#[arg(long, value_name = "COLORSPACE", default_value = "rgb")]
+		colorspace: String,
+
 		/// Force the colors to be added even if they already exist
 		#[arg(long)]
 		force: bool,
@@ -78,12 +82,12 @@ fn main() {
 				}
 			}
 		}
-		Some(Commands::AddGradient { start_color, end_color, steps, force: _ }) => {
+		Some(Commands::AddGradient { start_color, end_color, steps, colorspace, force: _ }) => {
 			if let (Some(start_color), Some(end_color), Some(steps)) = (start_color, end_color, steps) {
-				dbg!(&start_color, &end_color, &steps);
+				dbg!(&start_color, &end_color, &steps, &colorspace);
 				if !start_color.is_empty() && !end_color.is_empty() && *steps != 0 {
-					match lowtexpal.add_gradient_strings( &start_color, &end_color, *steps ) {
-						Some( i ) => println!("Added {} - {} at {:#?}", &start_color, &end_color, &i ),
+					match lowtexpal.add_gradient_colorspace( &start_color, &end_color, *steps, colorspace ) {
+						Some( i ) => println!("Added {} - {} ({}) at {:#?}", &start_color, &end_color, colorspace, &i ),
 						None => println!("Couldn't add {} - {} with {} steps", &start_color, &end_color, steps ),
 					}
 				}

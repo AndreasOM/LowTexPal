@@ -6,6 +6,26 @@ A minimalistic CLI tool for creating palette texture images for low-poly 3D grap
 
 LowTexPal builds palettes incrementally - each command adds colors to an existing file (or creates a new one). Colors can be added individually or as gradients using hex codes or CSS color names.
 
+### Perceptual Gradients
+
+Gradients support three colorspaces: `rgb` (default), `oklab`, and `oklch`. OKLab produces perceptually uniform gradients without muddy midpoints.
+
+```bash
+# RGB gradient (muddy middle)
+lowtexpal -f pal.png add-gradient --start-color red --end-color lime --steps 16
+
+# OKLab gradient (smooth, perceptually uniform)
+lowtexpal -f pal.png add-gradient --start-color red --end-color lime --steps 16 --colorspace oklab
+```
+
+![Red to Green: RGB vs OKLab](docs/gradient_animated.gif)
+
+*RGB (muddy) vs OKLab (smooth). OKLab preserves vibrancy and handles complementary colors, high saturation, and extreme lightness ranges better.*
+
+![Extreme cases: RGB vs OKLab](docs/extreme_all_animated.gif)
+
+*Top to bottom: Red↔Blue, Magenta↔Lime, Yellow↔Cyan, DarkRed↔Pink*
+
 ## Examples
 
 ```

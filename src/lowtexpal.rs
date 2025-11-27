@@ -1,3 +1,33 @@
+// OKLab color space conversion matrices and constants
+// Based on Björn Ottosson's OKLab specification (bottosson.github.io/posts/oklab)
+
+// M1: Linear sRGB to LMS
+const M1: [[f32; 3]; 3] = [
+	[0.4122214708, 0.5363325363, 0.0514459929],
+	[0.2119034982, 0.6806995451, 0.1073969566],
+	[0.0883024619, 0.2817188376, 0.6299787005],
+];
+
+// M1^-1: LMS to Linear sRGB
+const M1_INV: [[f32; 3]; 3] = [
+	[ 4.0767245293, -3.3077216883,  0.2309759054],
+	[-1.2681437731,  2.6093323231, -0.3411344290],
+	[-0.0041119885, -0.7034763098,  1.7068625689],
+];
+
+// M2: L'M'S' to OKLab
+const M2: [[f32; 3]; 3] = [
+	[ 0.2104542553,  0.7936177850, -0.0040720468],
+	[ 1.9779984951, -2.4285922050,  0.4505937099],
+	[ 0.0259040371,  0.7827717662, -0.8086757660],
+];
+
+// M2^-1: OKLab to L'M'S'
+const M2_INV: [[f32; 3]; 3] = [
+	[1.0000000000,  0.3963377774,  0.2158037573],
+	[1.0000000000, -0.1055613458, -0.0638541728],
+	[1.0000000000, -0.0894841775, -1.2914855480],
+];
 
 #[derive(Debug,Copy,Clone)]
 pub struct Color {
@@ -90,6 +120,106 @@ impl Color {
 
 	pub fn is_empty( &self ) -> bool {
 		self.rgba == [0f32;4]
+	}
+
+	// sRGB gamma correction: sRGB to linear RGB
+	fn srgb_to_linear(c: f32) -> f32 {
+		if c <= 0.04045 {
+			c / 12.92
+		} else {
+			((c + 0.055) / 1.055).powf(2.4)
+		}
+	}
+
+	// sRGB gamma correction: linear RGB to sRGB
+	fn linear_to_srgb(c: f32) -> f32 {
+		if c <= 0.0031308 {
+			c * 12.92
+		} else {
+			1.055 * c.powf(1.0 / 2.4) - 0.055
+		}
+	}
+
+	// Matrix multiplication helper: 3x3 matrix * 3x1 vector
+	fn matrix_mul_3x3(matrix: &[[f32; 3]; 3], vec: [f32; 3]) -> [f32; 3] {
+		[
+			matrix[0][0] * vec[0] + matrix[0][1] * vec[1] + matrix[0][2] * vec[2],
+			matrix[1][0] * vec[0] + matrix[1][1] * vec[1] + matrix[1][2] * vec[2],
+			matrix[2][0] * vec[0] + matrix[2][1] * vec[1] + matrix[2][2] * vec[2],
+		]
+	}
+
+	// Convert sRGB (0-1) to OKLab
+	pub fn to_oklab(&self) -> [f32; 3] {
+		// 1. sRGB to linear RGB
+		let r_lin = Self::srgb_to_linear(self.rgba[0]);
+		let g_lin = Self::srgb_to_linear(self.rgba[1]);
+		let b_lin = Self::srgb_to_linear(self.rgba[2]);
+
+		// 2. Linear RGB to LMS
+		let lms = Self::matrix_mul_3x3(&M1, [r_lin, g_lin, b_lin]);
+
+		// 3. Apply cube root to each LMS component
+		let l_prime = lms[0].cbrt();
+		let m_prime = lms[1].cbrt();
+		let s_prime = lms[2].cbrt();
+
+		// 4. L'M'S' to OKLab
+		Self::matrix_mul_3x3(&M2, [l_prime, m_prime, s_prime])
+	}
+
+	// Create Color from OKLab (L, a, b)
+	pub fn from_oklab(lab: [f32; 3]) -> Self {
+		// 1. OKLab to L'M'S'
+		let lms_prime = Self::matrix_mul_3x3(&M2_INV, lab);
+
+		// 2. Cube each component
+		let l = lms_prime[0].powi(3);
+		let m = lms_prime[1].powi(3);
+		let s = lms_prime[2].powi(3);
+
+		// 3. LMS to linear RGB
+		let rgb_lin = Self::matrix_mul_3x3(&M1_INV, [l, m, s]);
+
+		// 4. Linear RGB to sRGB with clamping
+		Color {
+			rgba: [
+				Self::linear_to_srgb(rgb_lin[0].max(0.0).min(1.0)),
+				Self::linear_to_srgb(rgb_lin[1].max(0.0).min(1.0)),
+				Self::linear_to_srgb(rgb_lin[2].max(0.0).min(1.0)),
+				1.0, // full alpha
+			],
+		}
+	}
+
+	// Convert OKLab to OKLCH
+	pub fn oklab_to_oklch(lab: [f32; 3]) -> [f32; 3] {
+		let l = lab[0];
+		let a = lab[1];
+		let b = lab[2];
+		let c = (a * a + b * b).sqrt();
+		let h = b.atan2(a); // radians
+		[l, c, h]
+	}
+
+	// Convert OKLCH to OKLab
+	pub fn oklch_to_oklab(lch: [f32; 3]) -> [f32; 3] {
+		let l = lch[0];
+		let c = lch[1];
+		let h = lch[2]; // radians
+		let a = c * h.cos();
+		let b = c * h.sin();
+		[l, a, b]
+	}
+
+	// Convert to OKLCH
+	pub fn to_oklch(&self) -> [f32; 3] {
+		Self::oklab_to_oklch(self.to_oklab())
+	}
+
+	// Create Color from OKLCH
+	pub fn from_oklch(lch: [f32; 3]) -> Self {
+		Self::from_oklab(Self::oklch_to_oklab(lch))
 	}
 
 	pub fn from_string( color_string: &str ) -> Option< Color > {
@@ -235,18 +365,67 @@ impl LowTexPal {
 	}
 
 	pub fn add_gradient_strings( &mut self, start_color_string: &str, end_color_string: &str, steps: u32 ) -> Option< Vec< usize > > {
+		// Call new method with RGB colorspace for backward compatibility
+		self.add_gradient_colorspace(start_color_string, end_color_string, steps, "rgb")
+	}
+
+	pub fn add_gradient_colorspace( &mut self, start_color_string: &str, end_color_string: &str, steps: u32, colorspace: &str ) -> Option< Vec< usize > > {
 		match ( Color::from_string( &start_color_string ), Color::from_string( &end_color_string ) ) {
 			( Some( start_color) , Some( end_color ) ) => {
-				let delta = ( end_color - start_color ) / ( steps - 1 );
-
-				let mut color = start_color;
 				let mut indices = Vec::new();
-				for _s in 0..steps {
-//					dbg!(color);
-					indices.push( self.add_color( &color ) );
-					color += delta;
+
+				match colorspace.to_lowercase().as_str() {
+					"oklab" => {
+						// Interpolate in OKLab space
+						let start_lab = start_color.to_oklab();
+						let end_lab = end_color.to_oklab();
+
+						for i in 0..steps {
+							let t = i as f32 / (steps - 1) as f32;
+							let interpolated_lab = [
+								start_lab[0] + t * (end_lab[0] - start_lab[0]),
+								start_lab[1] + t * (end_lab[1] - start_lab[1]),
+								start_lab[2] + t * (end_lab[2] - start_lab[2]),
+							];
+							let color = Color::from_oklab(interpolated_lab);
+							indices.push( self.add_color( &color ) );
+						}
+					},
+					"oklch" => {
+						// Interpolate in OKLCH space
+						let start_lch = start_color.to_oklch();
+						let end_lch = end_color.to_oklch();
+
+						// Handle hue interpolation (shortest path around color wheel)
+						let mut hue_diff = end_lch[2] - start_lch[2];
+						if hue_diff > std::f32::consts::PI {
+							hue_diff -= 2.0 * std::f32::consts::PI;
+						} else if hue_diff < -std::f32::consts::PI {
+							hue_diff += 2.0 * std::f32::consts::PI;
+						}
+
+						for i in 0..steps {
+							let t = i as f32 / (steps - 1) as f32;
+							let interpolated_lch = [
+								start_lch[0] + t * (end_lch[0] - start_lch[0]),
+								start_lch[1] + t * (end_lch[1] - start_lch[1]),
+								start_lch[2] + t * hue_diff,
+							];
+							let color = Color::from_oklch(interpolated_lch);
+							indices.push( self.add_color( &color ) );
+						}
+					},
+					_ => {
+						// Default: RGB interpolation (existing behavior)
+						let delta = ( end_color - start_color ) / ( steps - 1 );
+						let mut color = start_color;
+						for _s in 0..steps {
+							indices.push( self.add_color( &color ) );
+							color += delta;
+						}
+					}
 				}
-//				dbg!(color);
+
 				Some( indices )
 			},
 			_ => None,
