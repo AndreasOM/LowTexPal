@@ -1,68 +1,58 @@
-use clap::{Command, Arg};
+use clap::{Parser, Subcommand};
 
 use lowtexpal::LowTexPal;
 
+#[derive(Parser)]
+#[command(name = "lowtexpal")]
+#[command(version = "0.1")]
+#[command(author = "Andreas N. <andreas@omni-mad.com")]
+#[command(about = "Manipulates low poly palette textures")]
+struct Cli {
+	/// Set the name of the file to be manipulated
+	#[arg(short = 'f', long, value_name = "FILE")]
+	file: Option<String>,
+
+	#[command(subcommand)]
+	command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+	/// Add a single color to the palette
+	AddColor {
+		/// Set the color to be added
+		#[arg(short = 'c', long, value_name = "COLOR")]
+		color: Option<String>,
+
+		/// Force the color to be added even if it already exists
+		#[arg(long)]
+		force: bool,
+	},
+
+	/// Add a color gradient to the palette
+	AddGradient {
+		/// Set the start color of the gradient to be added
+		#[arg(long, value_name = "START COLOR")]
+		start_color: Option<String>,
+
+		/// Set the end color of the gradient to be added
+		#[arg(long, value_name = "END COLOR")]
+		end_color: Option<String>,
+
+		/// Set the number of steps
+		#[arg(long, value_name = "STEPS")]
+		steps: Option<u32>,
+
+		/// Force the colors to be added even if they already exist
+		#[arg(long)]
+		force: bool,
+	},
+}
+
 fn main() {
+	let cli = Cli::parse();
 
-	let matches = Command::new("lowtexpal")
-					.version("0.1")
-					.author("Andreas N. <andreas@omni-mad.com")
-					.about("Manipulates low poly palette textures")
-					.arg(
-						Arg::new("file")
-							.long("file")
-							.short('f')
-							.value_name("FILE")
-							.help("Set the name of the file to be manipulated.")
-					)
-					.subcommand(
-						Command::new("add-color")
-						.arg(
-							Arg::new("color")
-								.long("color")
-								.short('c')
-								.value_name("COLOR")
-								.help("Set the color to be added.")
-						)
-						.arg(
-							Arg::new("force")
-								.long("force")
-								.help("Force the color to be added even if it already exists.")
-								.action(clap::ArgAction::SetTrue)
-						)
-					)
-					.subcommand(
-						Command::new("add-gradient")
-						.arg(
-							Arg::new("start-color")
-								.long("start-color")
-								.value_name("START COLOR")
-								.help("Set the start color of the gradient to be added.")
-						)
-						.arg(
-							Arg::new("end-color")
-								.long("end-color")
-								.value_name("END COLOR")
-								.help("Set the end color of the gradient to be added.")
-						)
-						.arg(
-							Arg::new("steps")
-								.long("steps")
-								.value_name("STEPS")
-								.help("Set the number of steps.")
-						)
-						.arg(
-							Arg::new("force")
-								.long("force")
-								.help("Force the colors to be added even if they already exist.")
-								.action(clap::ArgAction::SetTrue)
-						)
-					)
-					.get_matches();
-
-//	dbg!(&matches);
-
-	let file = matches.get_one::<String>("file").map(|s| s.as_str()).unwrap_or("").to_string();
+	let file = cli.file.unwrap_or_default();
 
 //	dbg!(&file);
 
@@ -76,28 +66,32 @@ fn main() {
 
 	// :TODO: handle sub commmands
 
-	if let Some(("add-color", sub_matches)) = matches.subcommand() {
-		let color = sub_matches.get_one::<String>("color").map(|s| s.as_str()).unwrap_or("").to_string();
-		dbg!(&color);
-		if color != "" {
-			match lowtexpal.add_color_string( &color ) {
-				Some( i ) => println!("Added {} at {}", &color, i ),
-				None => println!("Couldn't add {}", &color ),
+	match &cli.command {
+		Some(Commands::AddColor { color, force: _ }) => {
+			if let Some(color) = color {
+				dbg!(&color);
+				if !color.is_empty() {
+					match lowtexpal.add_color_string( &color ) {
+						Some( i ) => println!("Added {} at {}", &color, i ),
+						None => println!("Couldn't add {}", &color ),
+					}
+				}
 			}
 		}
-	} else if let Some(("add-gradient", sub_matches)) = matches.subcommand() {
-		let start_color = sub_matches.get_one::<String>("start-color").map(|s| s.as_str()).unwrap_or("").to_string();
-		let end_color = sub_matches.get_one::<String>("end-color").map(|s| s.as_str()).unwrap_or("").to_string();
-		let steps = sub_matches.get_one::<String>("steps").map(|s| s.as_str()).unwrap_or("").parse::<u32>().unwrap_or( 0 );
-		dbg!(&start_color, &end_color, &steps);
-		if start_color != "" && end_color != "" && steps != 0 {
-			match lowtexpal.add_gradient_strings( &start_color, &end_color, steps ) {
-				Some( i ) => println!("Added {} - {} at {:#?}", &start_color, &end_color, &i ),
-				None => println!("Couldn't add {} - {} with {} steps", &start_color, &end_color, steps ),
+		Some(Commands::AddGradient { start_color, end_color, steps, force: _ }) => {
+			if let (Some(start_color), Some(end_color), Some(steps)) = (start_color, end_color, steps) {
+				dbg!(&start_color, &end_color, &steps);
+				if !start_color.is_empty() && !end_color.is_empty() && *steps != 0 {
+					match lowtexpal.add_gradient_strings( &start_color, &end_color, *steps ) {
+						Some( i ) => println!("Added {} - {} at {:#?}", &start_color, &end_color, &i ),
+						None => println!("Couldn't add {} - {} with {} steps", &start_color, &end_color, steps ),
+					}
+				}
 			}
 		}
-	} else {
-
+		None => {
+			// No subcommand provided
+		}
 	}
 
 //	dbg!(&lowtexpal);
