@@ -1,6 +1,6 @@
 
 #[derive(Debug,Copy,Clone)]
-struct Color {
+pub struct Color {
 	rgba: [f32;4],
 }
 
