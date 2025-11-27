@@ -12,8 +12,6 @@ path = "src/lowtexpal_main.rs"
 
 [dependencies]
 
-clap = { version = "4.5.53", features = ["derive"] }
+clap = { version = "4.5.53", default-features = false, features = ["std", "help", "usage", "error-context", "derive"] }
 css-color = "0.2.8"
-hex = "0.4.3"
 image = { version = "0.25.9", default-features = false, features = ["png"] }
-regex = "1.12.2"
