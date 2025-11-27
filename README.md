@@ -1,7 +1,10 @@
 # LowTexPal
 
+A minimalistic CLI tool for creating palette texture images for low-poly 3D graphics. Each pixel in the generated PNG represents a distinct color in your palette, perfect for UV mapping in low-poly models.
 
-Minimalistic tool to manipulate images that are used for low poly texturing.
+## Usage
+
+LowTexPal builds palettes incrementally - each command adds colors to an existing file (or creates a new one). Colors can be added individually or as gradients using hex codes or CSS color names.
 
 ## Examples
 
