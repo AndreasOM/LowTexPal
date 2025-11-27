@@ -139,7 +139,7 @@ impl LowTexPal {
 //		self.image = Some( img );
 		// :TODO: iterate through pixels to get colors
 
-		let img = img.into_rgba();
+		let img = img.into_rgba8();
 
 		for rgba in img.pixels() {
 //			dbg!(&rgba);
