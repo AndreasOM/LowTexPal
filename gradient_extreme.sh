@@ -44,11 +44,11 @@ cargo run --release -- -f extreme_oklab_dark_light.png add-gradient \
   --start-color "darkred" --end-color "pink" --steps 64 --colorspace oklab
 
 echo ""
-echo "Upscaling all gradients to 512x16..."
+echo "Upscaling all gradients to 256x256..."
 
-# Upscale all to wide horizontal strips
+# Upscale 8x8 palettes to 256x256 (32x scale, maintaining square aspect ratio)
 for file in extreme_*.png; do
-    gm convert "$file" -filter point -resize 512x16 "big_$file"
+    gm convert "$file" -filter point -resize 256x256 "big_$file"
 done
 
 echo "Creating comparison image..."
@@ -62,49 +62,35 @@ gm convert \
   big_extreme_rgb_dark_light.png big_extreme_oklab_dark_light.png +append \
   -append comparison_extreme.png
 
-echo "Creating animated GIFs for each case..."
+echo "Creating side-by-side comparison for all cases..."
 
-# Create individual animated GIFs for each gradient case (500ms per frame)
-gm convert -delay 50 big_extreme_rgb_red_blue.png big_extreme_oklab_red_blue.png -loop 0 anim_red_blue.gif
-gm convert -delay 50 big_extreme_rgb_mag_green.png big_extreme_oklab_mag_green.png -loop 0 anim_mag_green.gif
-gm convert -delay 50 big_extreme_rgb_yel_cyan.png big_extreme_oklab_yel_cyan.png -loop 0 anim_yel_cyan.gif
-gm convert -delay 50 big_extreme_rgb_dark_light.png big_extreme_oklab_dark_light.png -loop 0 anim_dark_light.gif
-
-# Create one big stacked animated GIF showing all cases
-# First create stacked versions of each
+# Create horizontal stacked versions of each colorspace
 gm convert \
   big_extreme_rgb_red_blue.png \
   big_extreme_rgb_mag_green.png \
   big_extreme_rgb_yel_cyan.png \
   big_extreme_rgb_dark_light.png \
-  -append stacked_rgb.png
+  +append stacked_rgb.png
 
 gm convert \
   big_extreme_oklab_red_blue.png \
   big_extreme_oklab_mag_green.png \
   big_extreme_oklab_yel_cyan.png \
   big_extreme_oklab_dark_light.png \
-  -append stacked_oklab.png
+  +append stacked_oklab.png
 
-# Then create animated GIF from the stacked versions
-gm convert -delay 50 stacked_rgb.png stacked_oklab.png -loop 0 extreme_all_animated.gif
+# Create side-by-side comparison (RGB on top, OKLab on bottom)
+gm convert stacked_rgb.png stacked_oklab.png -append extreme_all_comparison.png
 
 # Cleanup temp files
 rm -f stacked_rgb.png stacked_oklab.png
-
-# Cleanup
-rm -f extreme_*.png big_extreme_*.png
+rm -f extreme_rgb_*.png extreme_oklab_*.png big_extreme_*.png
 
 echo ""
-echo "✓ Created comparison_extreme.png (1024x64)"
+echo "✓ Created comparison_extreme.png (512x1024)"
 echo "  Each row: RGB (left) | OKLab (right)"
 echo ""
-echo "✓ Created individual animated GIFs:"
-echo "  - anim_red_blue.gif (Red → Blue)"
-echo "  - anim_mag_green.gif (Magenta → Lime)"
-echo "  - anim_yel_cyan.gif (Yellow → Cyan)"
-echo "  - anim_dark_light.gif (DarkRed → Pink)"
-echo ""
-echo "✓ Created extreme_all_animated.gif"
-echo "  All 4 cases stacked, flipping between RGB and OKLab"
+echo "✓ Created extreme_all_comparison.png (1024x512)"
+echo "  Top row: RGB (all 4 cases side-by-side)"
+echo "  Bottom row: OKLab (all 4 cases side-by-side)"
 echo ""

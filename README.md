@@ -18,13 +18,13 @@ lowtexpal -f pal.png add-gradient --start-color red --end-color lime --steps 16
 lowtexpal -f pal.png add-gradient --start-color red --end-color lime --steps 16 --colorspace oklab
 ```
 
-![Red to Green: RGB vs OKLab](docs/gradient_animated.gif)
+![Red to Green: RGB vs OKLab](docs/comparison.png)
 
-*RGB (muddy) vs OKLab (smooth). OKLab preserves vibrancy and handles complementary colors, high saturation, and extreme lightness ranges better.*
+*Left: RGB (muddy). Right: OKLab (smooth). OKLab preserves vibrancy and handles complementary colors, high saturation, and extreme lightness ranges better.*
 
-![Extreme cases: RGB vs OKLab](docs/extreme_all_animated.gif)
+![Extreme cases: RGB vs OKLab](docs/extreme_all_comparison.png)
 
-*Top to bottom: Red↔Blue, Magenta↔Lime, Yellow↔Cyan, DarkRed↔Pink*
+*Top row (RGB): Red↔Blue, Magenta↔Lime, Yellow↔Cyan, DarkRed↔Pink. Bottom row: Same gradients in OKLab.*
 
 ## Examples
 

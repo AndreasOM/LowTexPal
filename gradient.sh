@@ -24,10 +24,6 @@ echo "Creating side-by-side comparison..."
 # Combine side-by-side: RGB on left, OKLab on right
 gm convert +append rgb_big.png oklab_big.png comparison.png
 
-echo "Creating animated GIF (flipping between RGB and OKLab)..."
-# Create animated GIF that flips between the two (500ms per frame)
-gm convert -delay 50 rgb_big.png oklab_big.png -loop 0 gradient_animated.gif
-
 # Cleanup intermediate files
 rm rgb_gradient.png oklab_gradient.png rgb_big.png oklab_big.png
 
@@ -35,7 +31,4 @@ echo ""
 echo "✓ Created comparison.png (256x128)"
 echo "  Left:  RGB gradient (muddy middle)"
 echo "  Right: OKLab gradient (perceptually smooth)"
-echo ""
-echo "✓ Created gradient_animated.gif"
-echo "  Flips between RGB and OKLab every 500ms"
 echo ""
