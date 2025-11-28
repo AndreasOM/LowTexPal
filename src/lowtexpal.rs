@@ -241,22 +241,36 @@ impl Color {
 	}
 }
 
+/// Round up to the next power of 2
+fn round_up_to_power_of_2(n: u32) -> u32 {
+	if n == 0 {
+		return 1;
+	}
+	if n.is_power_of_two() {
+		return n;
+	}
+	n.next_power_of_two()
+}
+
 #[derive(Debug)]
 pub struct LowTexPal {
 	filename: String,
 	was_modified: bool,
 	colors: Vec<Color>,
+	min_width: Option<u32>,
 }
 
 impl LowTexPal {
 
 	pub fn new(
 		filename: &str,
+		min_width: Option<u32>,
 	) -> Self {
 		LowTexPal {
 			filename: filename.to_string(),
 			was_modified: false,
 			colors:Vec::new(),
+			min_width,
 		}
 	}
 
@@ -289,7 +303,8 @@ impl LowTexPal {
 			return
 		}
 
-		let size = match self.colors.len() {
+		// Calculate size based on color count
+		let size_from_colors = match self.colors.len() {
 			1 => 1,
 			2 => 2, //  <= 4 -> 2x2
 			3 => 2, //  <= 4 -> 2x2
@@ -299,6 +314,20 @@ impl LowTexPal {
 			n if n <= 256 => 16,
 			// :TODO: could use round_up_to_power_of_2(sqrt(n))
 			n => panic!("Not handling size for {} entries", n ),
+		};
+
+		// Apply min_width if specified
+		let size = if let Some(min_w) = self.min_width {
+			let min_w_rounded = round_up_to_power_of_2(min_w);
+			let final_size = size_from_colors.max(min_w_rounded);
+
+			if final_size > 1024 {
+				println!("Warning: Resulting image size is {}x{} (larger than 1024x1024)", final_size, final_size);
+			}
+
+			final_size
+		} else {
+			size_from_colors
 		};
 
 		dbg!(&size);

@@ -3,94 +3,81 @@
 # Demonstrates OKLab's advantages in extreme/challenging gradient cases:
 # - High-saturation colors on opposite sides of hue wheel
 # - Very light and very dark vivid tones (where sRGB gamut narrows)
+# Creates horizontal strips for compact comparison
 #
 
 echo "Testing extreme gradient cases..."
 echo ""
 
 # Clean up
-rm -f extreme_*.png comparison_extreme.png
+rm -f extreme_*.png extreme_all_comparison.png
 
 # Case 1: Red to Blue (opposite hues, high saturation)
 echo "1. Red → Blue (opposite hues)..."
-cargo run --release -- -f extreme_rgb_red_blue.png add-gradient \
+cargo run --release -- -f extreme_rgb_red_blue.png --min-width 64 add-gradient \
   --start-color "red" --end-color "blue" --steps 64 --colorspace rgb
 
-cargo run --release -- -f extreme_oklab_red_blue.png add-gradient \
+cargo run --release -- -f extreme_oklab_red_blue.png --min-width 64 add-gradient \
   --start-color "red" --end-color "blue" --steps 64 --colorspace oklab
 
 # Case 2: Magenta to Green (complementary colors)
 echo "2. Magenta → Lime (complementary)..."
-cargo run --release -- -f extreme_rgb_mag_green.png add-gradient \
+cargo run --release -- -f extreme_rgb_mag_green.png --min-width 64 add-gradient \
   --start-color "magenta" --end-color "lime" --steps 64 --colorspace rgb
 
-cargo run --release -- -f extreme_oklab_mag_green.png add-gradient \
+cargo run --release -- -f extreme_oklab_mag_green.png --min-width 64 add-gradient \
   --start-color "magenta" --end-color "lime" --steps 64 --colorspace oklab
 
 # Case 3: Yellow to Cyan (complementary)
 echo "3. Yellow → Cyan (complementary)..."
-cargo run --release -- -f extreme_rgb_yel_cyan.png add-gradient \
+cargo run --release -- -f extreme_rgb_yel_cyan.png --min-width 64 add-gradient \
   --start-color "yellow" --end-color "cyan" --steps 64 --colorspace rgb
 
-cargo run --release -- -f extreme_oklab_yel_cyan.png add-gradient \
+cargo run --release -- -f extreme_oklab_yel_cyan.png --min-width 64 add-gradient \
   --start-color "yellow" --end-color "cyan" --steps 64 --colorspace oklab
 
 # Case 4: Very dark to very light (narrow gamut at extremes)
 echo "4. DarkRed → Pink (dark to light vivid)..."
-cargo run --release -- -f extreme_rgb_dark_light.png add-gradient \
+cargo run --release -- -f extreme_rgb_dark_light.png --min-width 64 add-gradient \
   --start-color "darkred" --end-color "pink" --steps 64 --colorspace rgb
 
-cargo run --release -- -f extreme_oklab_dark_light.png add-gradient \
+cargo run --release -- -f extreme_oklab_dark_light.png --min-width 64 add-gradient \
   --start-color "darkred" --end-color "pink" --steps 64 --colorspace oklab
 
 echo ""
-echo "Upscaling all gradients to 256x256..."
+echo "Cropping to first row and upscaling to 512x8 strips..."
 
-# Upscale 8x8 palettes to 256x256 (32x scale, maintaining square aspect ratio)
+# Crop to first row (64x1), then upscale to 512x8 horizontal strips (each color becomes 8x8 square)
 for file in extreme_*.png; do
-    gm convert "$file" -filter point -resize 256x256 "big_$file"
+    gm convert "$file" -crop 64x1+0+0 +repage -filter point -resize 512x8 "strip_$file"
 done
 
-echo "Creating comparison image..."
+echo "Stacking all strips vertically (RGB/OKLab pairs)..."
 
-# Stack vertically: RGB on left, OKLab on right for each case
-# Format: [Label] RGB | OKLab
+# Stack all 8 strips vertically in pairs
 gm convert \
-  big_extreme_rgb_red_blue.png big_extreme_oklab_red_blue.png +append \
-  big_extreme_rgb_mag_green.png big_extreme_oklab_mag_green.png +append \
-  big_extreme_rgb_yel_cyan.png big_extreme_oklab_yel_cyan.png +append \
-  big_extreme_rgb_dark_light.png big_extreme_oklab_dark_light.png +append \
-  -append comparison_extreme.png
-
-echo "Creating side-by-side comparison for all cases..."
-
-# Create horizontal stacked versions of each colorspace
-gm convert \
-  big_extreme_rgb_red_blue.png \
-  big_extreme_rgb_mag_green.png \
-  big_extreme_rgb_yel_cyan.png \
-  big_extreme_rgb_dark_light.png \
-  +append stacked_rgb.png
-
-gm convert \
-  big_extreme_oklab_red_blue.png \
-  big_extreme_oklab_mag_green.png \
-  big_extreme_oklab_yel_cyan.png \
-  big_extreme_oklab_dark_light.png \
-  +append stacked_oklab.png
-
-# Create side-by-side comparison (RGB on top, OKLab on bottom)
-gm convert stacked_rgb.png stacked_oklab.png -append extreme_all_comparison.png
+  strip_extreme_rgb_red_blue.png \
+  strip_extreme_oklab_red_blue.png \
+  strip_extreme_rgb_mag_green.png \
+  strip_extreme_oklab_mag_green.png \
+  strip_extreme_rgb_yel_cyan.png \
+  strip_extreme_oklab_yel_cyan.png \
+  strip_extreme_rgb_dark_light.png \
+  strip_extreme_oklab_dark_light.png \
+  -append extreme_all_comparison.png
 
 # Cleanup temp files
-rm -f stacked_rgb.png stacked_oklab.png
-rm -f extreme_rgb_*.png extreme_oklab_*.png big_extreme_*.png
+rm -f extreme_rgb_*.png extreme_oklab_*.png strip_extreme_*.png
 
 echo ""
-echo "✓ Created comparison_extreme.png (512x1024)"
-echo "  Each row: RGB (left) | OKLab (right)"
-echo ""
-echo "✓ Created extreme_all_comparison.png (1024x512)"
-echo "  Top row: RGB (all 4 cases side-by-side)"
-echo "  Bottom row: OKLab (all 4 cases side-by-side)"
+echo "✓ Created extreme_all_comparison.png (512x64)"
+echo "  8 horizontal strips stacked vertically:"
+echo "  - Red→Blue (RGB)"
+echo "  - Red→Blue (OKLab)"
+echo "  - Magenta→Lime (RGB)"
+echo "  - Magenta→Lime (OKLab)"
+echo "  - Yellow→Cyan (RGB)"
+echo "  - Yellow→Cyan (OKLab)"
+echo "  - DarkRed→Pink (RGB)"
+echo "  - DarkRed→Pink (OKLab)"
 echo ""

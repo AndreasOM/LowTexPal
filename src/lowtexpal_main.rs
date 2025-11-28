@@ -12,6 +12,10 @@ struct Cli {
 	#[arg(short = 'f', long, value_name = "FILE")]
 	file: Option<String>,
 
+	/// Set minimum width for the output image (will be rounded up to power of 2)
+	#[arg(long, value_name = "MIN_WIDTH")]
+	min_width: Option<u32>,
+
 	#[command(subcommand)]
 	command: Option<Commands>,
 }
@@ -60,7 +64,7 @@ fn main() {
 
 //	dbg!(&file);
 
-	let mut lowtexpal = LowTexPal::new( &file );
+	let mut lowtexpal = LowTexPal::new( &file, cli.min_width );
 
 //	dbg!(&lowtexpal);
 
